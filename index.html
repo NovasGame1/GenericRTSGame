@@ -5,19 +5,14 @@
   <title>GenericRTSGame</title>
   <style>
     body { margin:0; background:#222; }
-    #game-container { 
-      width: 768px;   /* COLS * TILE_SIZE = 12 * 64 */
-      height: 512px;  /* ROWS * TILE_SIZE = 8 * 64 */
-      margin: auto; 
-    }
   </style>
 </head>
 <body>
-  <!-- this is where our game canvas will go -->
-  <div id="game-container"></div>
-
-  <!-- move scripts into body so container is parsed first -->
+  <!-- no more #game-container -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+  <script>
+    console.log("Phaser version", Phaser.VERSION);
+  </script>
   <script src="main.js"></script>
 </body>
 </html>
