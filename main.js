@@ -1,17 +1,13 @@
+# **main.js**
+```js
 console.log("Starting GenericRTSGame…");
 
-// Phaser game configuration
+// Game settings
 const TILE_SIZE = 64;
-const ROWS = 8, COLS = 12;
+const ROWS = 8;
+const COLS = 12;
 
-const config = {
-  type: Phaser.AUTO,
-  width: COLS * TILE_SIZE,
-  height: ROWS * TILE_SIZE,
-  backgroundColor: '#222',
-  scene: [ BootScene, GameScene ]
-};
-
+// Boot scene: load assets and transition
 class BootScene extends Phaser.Scene {
   constructor() { super('BootScene'); }
   preload() {
@@ -22,12 +18,12 @@ class BootScene extends Phaser.Scene {
   }
 }
 
+// Main game scene: build grid and input
 class GameScene extends Phaser.Scene {
   constructor() {
     super('GameScene');
     this.grid = [];
   }
-
   create() {
     for (let y = 0; y < ROWS; y++) {
       this.grid[y] = [];
@@ -35,7 +31,8 @@ class GameScene extends Phaser.Scene {
         const rect = this.add.rectangle(
           x * TILE_SIZE + TILE_SIZE/2,
           y * TILE_SIZE + TILE_SIZE/2,
-          TILE_SIZE - 2, TILE_SIZE - 2,
+          TILE_SIZE - 2,
+          TILE_SIZE - 2,
           0x444444
         ).setStrokeStyle(1, 0x888888);
 
@@ -46,7 +43,7 @@ class GameScene extends Phaser.Scene {
     this.input.on('pointerdown', ptr => {
       const gx = Math.floor(ptr.x / TILE_SIZE);
       const gy = Math.floor(ptr.y / TILE_SIZE);
-      if (gy>=0 && gy<ROWS && gx>=0 && gx<COLS) {
+      if (gy >= 0 && gy < ROWS && gx >= 0 && gx < COLS) {
         const cell = this.grid[gy][gx];
         if (cell.owner === 'player') {
           cell.owner = null;
@@ -60,4 +57,14 @@ class GameScene extends Phaser.Scene {
   }
 }
 
-new Phaser.Game(config);
+// Initialize Phaser once DOM is loaded
+window.onload = () => {
+  const config = {
+    type: Phaser.AUTO,
+    width: COLS * TILE_SIZE,
+    height: ROWS * TILE_SIZE,
+    backgroundColor: '#222',
+    scene: [ BootScene, GameScene ]
+  };
+  new Phaser.Game(config);
+};
