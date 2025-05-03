@@ -1,9 +1,9 @@
 console.log("main.js loaded — GenericRTSGame");
 
-// basic grid constants (unused in menu)
+// basic grid constants (unused on index.html until you start GameScene)
 const TILE_SIZE = 64, ROWS = 8, COLS = 12;
 
-// Phaser config
+// Phaser config stays the same
 const config = {
   type: Phaser.AUTO,
   parent: 'game-container',
@@ -13,29 +13,15 @@ const config = {
   scene: [ MenuScene, GameScene ]
 };
 
-// MENU SCENE
+// MENU SCENE is now just a stub (we handle the button redirect in index.html)
 class MenuScene extends Phaser.Scene {
   constructor(){ super('MenuScene'); }
   create(){
-    // Singleplayer now just redirects to singleplayer.html
-    document.getElementById('singleplayer-btn')
-      .addEventListener('click', () => {
-        window.location.href = 'singleplayer.html';
-      });
-
-    // placeholder stubs for the others
-    document.getElementById('multiplayer-btn')
-      .addEventListener('click', () => {
-        alert('Multiplayer coming soon!');
-      });
-    document.getElementById('settings-btn')
-      .addEventListener('click', () => {
-        alert('Settings coming soon!');
-      });
+    // nothing here anymore
   }
 }
 
-// MAIN GAME SCENE (won’t run until you navigate back)
+// MAIN GAME SCENE (runs if you ever call scene.start('GameScene'))
 class GameScene extends Phaser.Scene {
   constructor(){ 
     super('GameScene');
@@ -55,7 +41,6 @@ class GameScene extends Phaser.Scene {
         this.grid[y][x] = { owner: null, rect };
       }
     }
-
     this.input.on('pointerdown', ptr => {
       const gx = Math.floor(ptr.x / TILE_SIZE);
       const gy = Math.floor(ptr.y / TILE_SIZE);
