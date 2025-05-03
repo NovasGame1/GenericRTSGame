@@ -1,20 +1,15 @@
 let game;
 
 window.addEventListener('DOMContentLoaded', () => {
-  console.log('DOM loaded: attaching menu button listeners');
-
   document
     .getElementById('singleplayer-btn')
     .addEventListener('click', () => {
-      console.log('Singleplayer clicked');
       document.getElementById('menu').style.display = 'none';
       game.scene.start('GameScene', { mapName: 'default-map' });
     });
-
   document
     .getElementById('multiplayer-btn')
     .addEventListener('click', () => alert('Multiplayer coming soon!'));
-
   document
     .getElementById('settings-btn')
     .addEventListener('click', () => alert('Settings coming soon!'));
@@ -34,84 +29,41 @@ const config = {
 
 class MenuScene extends Phaser.Scene {
   constructor(){ super('MenuScene'); }
-  create(){
-    console.log('MenuScene created');
-  }
+  create(){ /* menu is plain HTML */ }
 }
 
 class GameScene extends Phaser.Scene {
   constructor(){ super('GameScene'); }
   init(data) {
     this.mapName = data.mapName || 'default-map';
-    console.log('GameScene init, mapName =', this.mapName);
   }
 
   preload() {
-    const url = `assets/maps/${this.mapName}.json`;
-    console.log('Preloading map JSON from', url);
-    this.load.json('mapData', url);
+    // load the map image instead of JSON
+    const key = 'mapImage';
+    const url = `assets/maps/${this.mapName}.png`;
+    console.log('Loading map image from', url);
+    this.load.image(key, url);
 
-    // log success or failure
-    this.load.on('filecomplete-json-mapData', () => {
-      console.log('✅ Map JSON loaded successfully');
+    this.load.on('filecomplete-image-mapImage', () => {
+      console.log('✅ Map image loaded');
     });
-    this.load.on('loaderror', (file) => {
-      if (file.type === 'json') {
-        console.error('❌ Failed to load map JSON:', file.src);
+    this.load.on('loaderror', file => {
+      if (file.type === 'image') {
+        console.error('❌ Failed to load map image:', file.src);
       }
     });
   }
 
   create() {
-    let map = this.cache.json.get('mapData');
-    if (!map) {
-      console.error('⚠️  mapData is undefined—using fallback empty map');
-      // fallback empty map
-      map = {
-        rows: DEFAULT_ROWS,
-        cols: DEFAULT_COLS,
-        tiles: Array.from({ length: DEFAULT_ROWS }, () =>
-          Array.from({ length: DEFAULT_COLS }, () => 0)
-        )
-      };
-    }
+    // draw the full‐screen map image
+    const img = this.add.image(0, 0, 'mapImage')
+      .setOrigin(0, 0)
+      .setDisplaySize(this.scale.width, this.scale.height);
 
-    console.log('Creating map:', map);
-
-    const rows = map.rows, cols = map.cols;
-    this.grid = [];
-
-    for (let y = 0; y < rows; y++) {
-      this.grid[y] = [];
-      for (let x = 0; x < cols; x++) {
-        const code = map.tiles[y][x];
-        let fill = code === 1 ? 0x22aa22
-                 : code === 2 ? 0xaa2222
-                 : 0x444444;
-
-        const rect = this.add.rectangle(
-          x * TILE_SIZE + TILE_SIZE/2,
-          y * TILE_SIZE + TILE_SIZE/2,
-          TILE_SIZE - 2,
-          TILE_SIZE - 2,
-          fill
-        ).setStrokeStyle(1, 0x888888);
-
-        this.grid[y][x] = { owner: code, rect };
-      }
-    }
-
-    this.input.on('pointerdown', ptr => {
-      const gx = Math.floor(ptr.x / TILE_SIZE);
-      const gy = Math.floor(ptr.y / TILE_SIZE);
-      if (gx >= 0 && gx < cols && gy >= 0 && gy < rows) {
-        let cell = this.grid[gy][gx];
-        if (cell.owner === 0) {
-          cell.owner = 1;
-          cell.rect.fillColor = 0x22aa22;
-        }
-      }
-    });
+    // OPTIONAL: if you still want a clickable grid overlay, you can now
+    //   loop your tiles exactly as before, but behind or on top of this image.
+    // For now, we’ll just stop here so you see the map.
   }
 }
 
