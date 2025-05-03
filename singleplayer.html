@@ -6,47 +6,69 @@
   <style>
     body {
       margin: 0;
-      background: #222;
-      position: relative;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
       overflow: hidden;
+      position: relative;
     }
-    /* Phaser will inject the canvas here */
-    #sp-container {
-      width: 768px;   /* 12 cols * 64px */
-      height: 512px;  /* 8 rows  * 64px */
-      margin: 0 auto;
+    /* container to hold both the img and the Phaser canvas */
+    #map-wrapper {
+      position: relative;
+      width: 768px;   /* 12 × 64 */
+      height: 512px;  /*  8 × 64 */
+    }
+    /* your earth map */
+    #map-bg {
       display: block;
+      width: 100%;
+      height: 100%;
     }
-    /* Back button */
+    /* Phaser injects its canvas here */
+    #sp-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      /* transparent by default */
+    }
+    /* back button */
     #back-btn {
       position: absolute;
       top: 16px;
       left: 16px;
+      z-index: 20;
       padding: 8px 16px;
-      background: #444;
+      background: rgba(0,0,0,0.6);
       color: #fff;
       border: none;
       border-radius: 4px;
       cursor: pointer;
       font-family: sans-serif;
-      z-index: 10;
     }
     #back-btn:hover {
-      background: #555;
+      background: rgba(255,255,255,0.1);
     }
   </style>
 </head>
 <body>
 
   <button id="back-btn">← Back to Menu</button>
-  <div id="sp-container"></div>
+
+  <div id="map-wrapper">
+    <img id="map-bg" src="assets/maps/default-map.png" alt="Singleplayer Map">
+    <div id="sp-container"></div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
   <script src="singleplayer.js"></script>
   <script>
-    // simple back action
-    document.getElementById('back-btn')
-      .addEventListener('click', () => window.location.href = 'index.html');
+    document.getElementById('back-btn').addEventListener('click', () => {
+      window.location.href = 'index.html';
+    });
   </script>
 </body>
 </html>
