@@ -1,17 +1,16 @@
 let game;
 
 window.addEventListener('DOMContentLoaded', () => {
-  document
-    .getElementById('singleplayer-btn')
+  // menu buttons
+  document.getElementById('singleplayer-btn')
     .addEventListener('click', () => {
       document.getElementById('menu').style.display = 'none';
-      game.scene.start('GameScene', { mapName: 'default-map' });
+      // tell the GameScene which map image to use:
+      game.scene.start('GameScene', { mapKey: 'default-map' });
     });
-  document
-    .getElementById('multiplayer-btn')
+  document.getElementById('multiplayer-btn')
     .addEventListener('click', () => alert('Multiplayer coming soon!'));
-  document
-    .getElementById('settings-btn')
+  document.getElementById('settings-btn')
     .addEventListener('click', () => alert('Settings coming soon!'));
 });
 
@@ -29,41 +28,61 @@ const config = {
 
 class MenuScene extends Phaser.Scene {
   constructor(){ super('MenuScene'); }
-  create(){ /* menu is plain HTML */ }
+  create(){
+    // nothing here—menu is pure HTML
+  }
 }
 
 class GameScene extends Phaser.Scene {
   constructor(){ super('GameScene'); }
+
   init(data) {
-    this.mapName = data.mapName || 'default-map';
+    this.mapKey = data.mapKey || 'default-map';
+    console.log('Loading map image:', this.mapKey);
   }
 
   preload() {
-    // load the map image instead of JSON
-    const key = 'mapImage';
-    const url = `assets/maps/${this.mapName}.png`;
-    console.log('Loading map image from', url);
-    this.load.image(key, url);
-
-    this.load.on('filecomplete-image-mapImage', () => {
-      console.log('✅ Map image loaded');
-    });
-    this.load.on('loaderror', file => {
-      if (file.type === 'image') {
-        console.error('❌ Failed to load map image:', file.src);
-      }
-    });
+    // load the chosen map image from assets/maps/<mapKey>.png
+    this.load.image('mapImage', `assets/maps/${this.mapKey}.png`);
   }
 
   create() {
-    // draw the full‐screen map image
-    const img = this.add.image(0, 0, 'mapImage')
+    // draw the map full-screen (0,0) origin
+    this.add.image(0, 0, 'mapImage')
       .setOrigin(0, 0)
-      .setDisplaySize(this.scale.width, this.scale.height);
+      // scale to fit if needed:
+      .setDisplaySize(this.sys.game.config.width, this.sys.game.config.height);
 
-    // OPTIONAL: if you still want a clickable grid overlay, you can now
-    //   loop your tiles exactly as before, but behind or on top of this image.
-    // For now, we’ll just stop here so you see the map.
+    // OPTIONAL: overlay your grid on top for clicking
+    this.grid = [];
+    for (let y = 0; y < DEFAULT_ROWS; y++) {
+      this.grid[y] = [];
+      for (let x = 0; x < DEFAULT_COLS; x++) {
+        const rect = this.add.rectangle(
+          x * TILE_SIZE + TILE_SIZE/2,
+          y * TILE_SIZE + TILE_SIZE/2,
+          TILE_SIZE - 2, TILE_SIZE - 2,
+          0x000000,      // fully transparent fill
+          0               // alpha = 0
+        ).setStrokeStyle(1, 0x888888)
+         .setInteractive();
+        this.grid[y][x] = { rect, claimed:false };
+      }
+    }
+
+    // clicking a cell toggles a semi-transparent highlight
+    this.input.on('gameobjectdown', (pointer, gameObject) => {
+      for (let y = 0; y < DEFAULT_ROWS; y++) {
+        for (let x = 0; x < DEFAULT_COLS; x++) {
+          if (this.grid[y][x].rect === gameObject) {
+            const cell = this.grid[y][x];
+            cell.claimed = !cell.claimed;
+            cell.rect.fillColor = cell.claimed ? 0x22aa22 : 0x000000;
+            cell.rect.fillAlpha = cell.claimed ? 0.4 : 0;
+          }
+        }
+      }
+    });
   }
 }
 
