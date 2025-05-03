@@ -1,16 +1,16 @@
 console.log("singleplayer.js loaded — GenericRTSGame");
 
 const TILE_SIZE = 64;
-const MAP_KEY   = 'default-map';  // still used for loading JSON
+const MAP_KEY   = 'default-map';
 
 const config = {
   type: Phaser.AUTO,
-  parent: 'sp-container',
   scale: {
+    parent: 'sp-container',
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
-    width: TILE_SIZE * 12,
-    height: TILE_SIZE * 8,
+    width: 768,
+    height: 512
   },
   transparent: true,
   scene: [ SPScene ]
@@ -20,48 +20,35 @@ class SPScene extends Phaser.Scene {
   constructor() {
     super('SPScene');
     this.grid = [];
-    this.resources = 0;
+    this.resourceCount = 0;
   }
 
   preload() {
-    // load your map JSON (if it exists)
     this.load.json('mapData', `assets/maps/${MAP_KEY}.json`);
   }
 
   create() {
-    // pull in JSON or default to all-neutral
+    // grab the HUD element
+    this.hud = document.getElementById('hud');
+    this.hud.innerText = `Resources: ${this.resourceCount}`;
+
+    // load or default map data
     let map = this.cache.json.get('mapData');
     if (!map) {
-      map = {
-        rows: 8,
-        cols: 12,
-        tiles: Array(8).fill().map(() => Array(12).fill(0))
-      };
+      map = { rows: 8, cols: 12, tiles: Array(8).fill().map(() => Array(12).fill(0)) };
     }
-    const { rows, cols, tiles } = map;
+    const rows = map.rows, cols = map.cols;
 
-    // HUD: show resources
-    this.resourceText = this.add.text(10, 10, 'Gold: 0', {
-      fontSize: '24px',
-      fill: '#ffff00',
-      fontFamily: 'Arial'
-    }).setScrollFactor(0).setDepth(5);
+    // helper to check adjacency
+    const isAdjacent = (x, y) => {
+      const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+      return dirs.some(([dx,dy]) => {
+        const nx = x+dx, ny = y+dy;
+        return nx>=0 && nx<cols && ny>=0 && ny<rows && this.grid[ny][nx].owner === 1;
+      });
+    };
 
-    // every second, collect +1 per owned tile
-    this.time.addEvent({
-      delay: 1000, loop: true, callback: () => {
-        let ownedCount = 0;
-        for (let y = 0; y < rows; y++) {
-          for (let x = 0; x < cols; x++) {
-            if (this.grid[y][x].owner === 1) ownedCount++;
-          }
-        }
-        this.resources += ownedCount;
-        this.resourceText.setText(`Gold: ${this.resources}`);
-      }
-    });
-
-    // draw transparent, interactive tiles
+    // set up the clickable grid
     for (let y = 0; y < rows; y++) {
       this.grid[y] = [];
       for (let x = 0; x < cols; x++) {
@@ -70,44 +57,40 @@ class SPScene extends Phaser.Scene {
           y * TILE_SIZE,
           TILE_SIZE,
           TILE_SIZE,
-          0xffffff, 0
+          0xffffff,
+          0
         )
         .setOrigin(0)
         .setInteractive({ useHandCursor: true });
 
-        // store owner state (0=neutral,1=you,2=AI)
-        this.grid[y][x] = { owner: tiles[y][x], rect };
-
-        // click handler: expand/attack rules
         rect.on('pointerdown', () => {
           const cell = this.grid[y][x];
-          if (cell.owner === 1) {
-            // clicking your own: do nothing or optionally unclaim
-            return;
-          }
-          // only allow if adjacent to one of your tiles
-          if (this.isAdjacentToPlayer(x, y)) {
+          // only expand/attack if adjacent to your territory
+          if (cell.owner !== 1 && isAdjacent(x,y)) {
             cell.owner = 1;
             rect.fillColor = 0x22aa22;
             rect.fillAlpha = 0.3;
           }
         });
-      }
-    }
-  }
 
-  // helper: check N/E/S/W for any tile you own
-  isAdjacentToPlayer(x, y) {
-    const deltas = [ [1,0],[-1,0],[0,1],[0,-1] ];
-    for (let [dx,dy] of deltas) {
-      const nx = x + dx, ny = y + dy;
-      if (ny>=0 && ny < this.grid.length &&
-          nx>=0 && nx < this.grid[0].length &&
-          this.grid[ny][nx].owner === 1) {
-        return true;
+        this.grid[y][x] = { owner: map.tiles[y][x], rect };
       }
     }
-    return false;
+
+    // every second, generate resources
+    this.time.addEvent({
+      delay: 1000,
+      loop: true,
+      callback: () => {
+        // +1 per owned tile
+        let owned = 0;
+        for (let row of this.grid) {
+          for (let cell of row) if (cell.owner === 1) owned++;
+        }
+        this.resourceCount += owned;
+        this.hud.innerText = `Resources: ${this.resourceCount}`;
+      }
+    });
   }
 }
 
