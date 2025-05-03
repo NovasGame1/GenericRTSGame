@@ -1,10 +1,8 @@
-// expose game instance so we can call .scene.start from outside
 let game;
 
 window.addEventListener('DOMContentLoaded', () => {
   console.log('DOM loaded: attaching menu button listeners');
 
-  // Singleplayer: hide menu & start GameScene with a map name
   document
     .getElementById('singleplayer-btn')
     .addEventListener('click', () => {
@@ -13,7 +11,6 @@ window.addEventListener('DOMContentLoaded', () => {
       game.scene.start('GameScene', { mapName: 'default-map' });
     });
 
-  // Placeholder handlers
   document
     .getElementById('multiplayer-btn')
     .addEventListener('click', () => alert('Multiplayer coming soon!'));
@@ -24,69 +21,86 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 const TILE_SIZE = 64;
+const DEFAULT_ROWS = 8, DEFAULT_COLS = 12;
 
 const config = {
   type: Phaser.AUTO,
   parent: 'game-container',
-  width: TILE_SIZE * 12,  // should match your map cols
-  height: TILE_SIZE * 8,  // should match your map rows
+  width: TILE_SIZE * DEFAULT_COLS,
+  height: TILE_SIZE * DEFAULT_ROWS,
   backgroundColor: '#222',
-  scene: [MenuScene, GameScene]
+  scene: [ MenuScene, GameScene ]
 };
 
-// define scenes…
-
 class MenuScene extends Phaser.Scene {
-  constructor() { super('MenuScene'); }
-  create() {
+  constructor(){ super('MenuScene'); }
+  create(){
     console.log('MenuScene created');
-    // nothing here now; menu is pure HTML
   }
 }
 
 class GameScene extends Phaser.Scene {
-  constructor() { super('GameScene'); }
-
+  constructor(){ super('GameScene'); }
   init(data) {
     this.mapName = data.mapName || 'default-map';
     console.log('GameScene init, mapName =', this.mapName);
   }
 
   preload() {
-    console.log('Preloading map:', this.mapName);
-    this.load.json('mapData', `assets/maps/${this.mapName}.json`);
+    const url = `assets/maps/${this.mapName}.json`;
+    console.log('Preloading map JSON from', url);
+    this.load.json('mapData', url);
+
+    // log success or failure
+    this.load.on('filecomplete-json-mapData', () => {
+      console.log('✅ Map JSON loaded successfully');
+    });
+    this.load.on('loaderror', (file) => {
+      if (file.type === 'json') {
+        console.error('❌ Failed to load map JSON:', file.src);
+      }
+    });
   }
 
   create() {
-    console.log('Creating map from JSON…');
-    const map = this.cache.json.get('mapData');
+    let map = this.cache.json.get('mapData');
+    if (!map) {
+      console.error('⚠️  mapData is undefined—using fallback empty map');
+      // fallback empty map
+      map = {
+        rows: DEFAULT_ROWS,
+        cols: DEFAULT_COLS,
+        tiles: Array.from({ length: DEFAULT_ROWS }, () =>
+          Array.from({ length: DEFAULT_COLS }, () => 0)
+        )
+      };
+    }
+
+    console.log('Creating map:', map);
+
     const rows = map.rows, cols = map.cols;
     this.grid = [];
 
     for (let y = 0; y < rows; y++) {
       this.grid[y] = [];
       for (let x = 0; x < cols; x++) {
-        // pick fill color by owner code
-        let code = map.tiles[y][x];
+        const code = map.tiles[y][x];
         let fill = code === 1 ? 0x22aa22
                  : code === 2 ? 0xaa2222
                  : 0x444444;
 
-        const rect = this.add
-          .rectangle(
-            x * TILE_SIZE + TILE_SIZE/2,
-            y * TILE_SIZE + TILE_SIZE/2,
-            TILE_SIZE - 2,
-            TILE_SIZE - 2,
-            fill
-          )
-          .setStrokeStyle(1, 0x888888);
+        const rect = this.add.rectangle(
+          x * TILE_SIZE + TILE_SIZE/2,
+          y * TILE_SIZE + TILE_SIZE/2,
+          TILE_SIZE - 2,
+          TILE_SIZE - 2,
+          fill
+        ).setStrokeStyle(1, 0x888888);
 
         this.grid[y][x] = { owner: code, rect };
       }
     }
 
-    // allow clicking neutral tiles to claim them
     this.input.on('pointerdown', ptr => {
       const gx = Math.floor(ptr.x / TILE_SIZE);
       const gy = Math.floor(ptr.y / TILE_SIZE);
@@ -101,5 +115,4 @@ class GameScene extends Phaser.Scene {
   }
 }
 
-// finally, launch the Phaser game
 game = new Phaser.Game(config);
