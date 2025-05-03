@@ -4,15 +4,15 @@
   <meta charset="UTF-8" />
   <title>GenericRTSGame</title>
   <style>
-    body { margin:0; background:#222; }
+    body { margin:0; background:#222; font-family:sans-serif; }
     #menu {
       position: absolute; top:50%; left:50%;
       transform: translate(-50%,-50%);
-      text-align: center; z-index: 10;
+      text-align:center; z-index:10;
     }
     #menu button {
-      margin: 8px; padding: 12px 24px;
-      font-size: 16px; cursor: pointer;
+      margin:8px; padding:12px 24px;
+      font-size:16px; cursor:pointer;
       border:none; border-radius:4px;
       background:#444; color:#fff;
     }
@@ -21,13 +21,11 @@
   </style>
 </head>
 <body>
-
   <div id="menu">
     <button id="singleplayer-btn">Singleplayer</button>
     <button id="multiplayer-btn">Multiplayer</button>
     <button id="settings-btn">Settings</button>
   </div>
-
   <div id="game-container"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
