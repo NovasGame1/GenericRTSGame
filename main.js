@@ -1,89 +1,85 @@
-let game;
-
-window.addEventListener('DOMContentLoaded', () => {
-  // menu buttons
-  document.getElementById('singleplayer-btn')
-    .addEventListener('click', () => {
-      document.getElementById('menu').style.display = 'none';
-      // tell the GameScene which map image to use:
-      game.scene.start('GameScene', { mapKey: 'default-map' });
-    });
-  document.getElementById('multiplayer-btn')
-    .addEventListener('click', () => alert('Multiplayer coming soon!'));
-  document.getElementById('settings-btn')
-    .addEventListener('click', () => alert('Settings coming soon!'));
-});
+console.log("main.js loaded — GenericRTSGame");
 
 const TILE_SIZE = 64;
-const DEFAULT_ROWS = 8, DEFAULT_COLS = 12;
 
+// Phaser config
 const config = {
   type: Phaser.AUTO,
   parent: 'game-container',
-  width: TILE_SIZE * DEFAULT_COLS,
-  height: TILE_SIZE * DEFAULT_ROWS,
+  width: TILE_SIZE * 12,  // must match your maps’ cols
+  height: TILE_SIZE * 8,  // must match your maps’ rows
   backgroundColor: '#222',
   scene: [ MenuScene, GameScene ]
 };
 
+// MENU — choose singleplayer → passes mapName to GameScene
 class MenuScene extends Phaser.Scene {
   constructor(){ super('MenuScene'); }
-  create(){
-    // nothing here—menu is pure HTML
+  create() {
+    document.getElementById('singleplayer-btn')
+      .addEventListener('click', () => {
+        document.getElementById('menu').style.display = 'none';
+        // here we pick our map file key:
+        this.scene.start('GameScene', { mapName: 'default-map' });
+      });
+    document.getElementById('multiplayer-btn')
+      .addEventListener('click', () => alert('Multiplayer coming soon!'));
+    document.getElementById('settings-btn')
+      .addEventListener('click', () => alert('Settings coming soon!'));
   }
 }
 
+// GAME — loads JSON then draws
 class GameScene extends Phaser.Scene {
   constructor(){ super('GameScene'); }
 
   init(data) {
-    this.mapKey = data.mapKey || 'default-map';
-    console.log('Loading map image:', this.mapKey);
+    this.mapName = data.mapName || 'default-map';
   }
 
   preload() {
-    // load the chosen map image from assets/maps/<mapKey>.png
-    this.load.image('mapImage', `assets/maps/${this.mapKey}.png`);
+    // load the map JSON from assets/maps/
+    this.load.json('mapData', `assets/maps/${this.mapName}.json`);
   }
 
   create() {
-    // draw the map full-screen (0,0) origin
-    this.add.image(0, 0, 'mapImage')
-      .setOrigin(0, 0)
-      // scale to fit if needed:
-      .setDisplaySize(this.sys.game.config.width, this.sys.game.config.height);
-
-    // OPTIONAL: overlay your grid on top for clicking
+    // grab it out of cache
+    const map = this.cache.json.get('mapData');
+    const rows = map.rows, cols = map.cols;
     this.grid = [];
-    for (let y = 0; y < DEFAULT_ROWS; y++) {
+
+    for (let y = 0; y < rows; y++) {
       this.grid[y] = [];
-      for (let x = 0; x < DEFAULT_COLS; x++) {
+      for (let x = 0; x < cols; x++) {
+        // owner code → color
+        let fill = 0x444444;          // neutral
+        if (map.tiles[y][x] === 1) fill = 0x22aa22; // player
+        if (map.tiles[y][x] === 2) fill = 0xaa2222; // AI
+
         const rect = this.add.rectangle(
           x * TILE_SIZE + TILE_SIZE/2,
           y * TILE_SIZE + TILE_SIZE/2,
           TILE_SIZE - 2, TILE_SIZE - 2,
-          0x000000,      // fully transparent fill
-          0               // alpha = 0
-        ).setStrokeStyle(1, 0x888888)
-         .setInteractive();
-        this.grid[y][x] = { rect, claimed:false };
+          fill
+        ).setStrokeStyle(1, 0x888888);
+
+        this.grid[y][x] = { owner: map.tiles[y][x], rect };
       }
     }
 
-    // clicking a cell toggles a semi-transparent highlight
-    this.input.on('gameobjectdown', (pointer, gameObject) => {
-      for (let y = 0; y < DEFAULT_ROWS; y++) {
-        for (let x = 0; x < DEFAULT_COLS; x++) {
-          if (this.grid[y][x].rect === gameObject) {
-            const cell = this.grid[y][x];
-            cell.claimed = !cell.claimed;
-            cell.rect.fillColor = cell.claimed ? 0x22aa22 : 0x000000;
-            cell.rect.fillAlpha = cell.claimed ? 0.4 : 0;
-          }
+    // clicking still toggles player-control on neutral only
+    this.input.on('pointerdown', ptr => {
+      const gx = Math.floor(ptr.x / TILE_SIZE);
+      const gy = Math.floor(ptr.y / TILE_SIZE);
+      if (gx >= 0 && gx < cols && gy >= 0 && gy < rows) {
+        let cell = this.grid[gy][gx];
+        if (cell.owner === 0) {
+          cell.owner = 1;
+          cell.rect.fillColor = 0x22aa22;
         }
       }
     });
   }
 }
 
-game = new Phaser.Game(config);
+new Phaser.Game(config);
