@@ -1,28 +1,26 @@
 console.log("main.js loaded — GenericRTSGame");
 
-// constants must match your JSON
 const TILE_SIZE = 64;
-const ROWS = 8, COLS = 12;
 
+// Phaser config
 const config = {
   type: Phaser.AUTO,
   parent: 'game-container',
-  width: COLS * TILE_SIZE,
-  height: ROWS * TILE_SIZE,
+  width: TILE_SIZE * 12,  // must match your maps’ cols
+  height: TILE_SIZE * 8,  // must match your maps’ rows
   backgroundColor: '#222',
   scene: [ MenuScene, GameScene ]
 };
 
-// MENU SCENE: pass the map key into GameScene
+// MENU — choose singleplayer → passes mapName to GameScene
 class MenuScene extends Phaser.Scene {
   constructor(){ super('MenuScene'); }
-  create(){
-    const menu = document.getElementById('menu');
+  create() {
     document.getElementById('singleplayer-btn')
       .addEventListener('click', () => {
-        menu.style.display = 'none';
-        // start GameScene and hand it { mapKey: 'map1' }
-        this.scene.start('GameScene', { mapKey: 'map1' });
+        document.getElementById('menu').style.display = 'none';
+        // here we pick our map file key:
+        this.scene.start('GameScene', { mapName: 'default-map' });
       });
     document.getElementById('multiplayer-btn')
       .addEventListener('click', () => alert('Multiplayer coming soon!'));
@@ -31,63 +29,54 @@ class MenuScene extends Phaser.Scene {
   }
 }
 
-// GAME SCENE: load JSON then draw grid from it
+// GAME — loads JSON then draws
 class GameScene extends Phaser.Scene {
-  constructor(){ 
-    super('GameScene');
+  constructor(){ super('GameScene'); }
+
+  init(data) {
+    this.mapName = data.mapName || 'default-map';
+  }
+
+  preload() {
+    // load the map JSON from assets/maps/
+    this.load.json('mapData', `assets/maps/${this.mapName}.json`);
+  }
+
+  create() {
+    // grab it out of cache
+    const map = this.cache.json.get('mapData');
+    const rows = map.rows, cols = map.cols;
     this.grid = [];
-  }
 
-  // grab the data passed in
-  init(data){
-    this.mapKey = data.mapKey || 'map1';
-  }
-
-  preload(){
-    // load maps/<mapKey>.json as 'mapData'
-    this.load.json('mapData', `maps/${this.mapKey}.json`);
-  }
-
-  create(){
-    // pull in the JSON
-    const mapData = this.cache.json.get('mapData');
-    console.log('Loaded map:', mapData.name);
-
-    // optional: verify dimensions match
-    if (mapData.rows !== ROWS || mapData.cols !== COLS) {
-      console.warn(`Map size (${mapData.rows}×${mapData.cols}) doesn’t match constants ${ROWS}×${COLS}`);
-    }
-
-    // build the grid from mapData.tiles
-    for (let y = 0; y < ROWS; y++){
+    for (let y = 0; y < rows; y++) {
       this.grid[y] = [];
-      for (let x = 0; x < COLS; x++){
-        const ownerFlag = mapData.tiles[y][x];
+      for (let x = 0; x < cols; x++) {
+        // owner code → color
+        let fill = 0x444444;          // neutral
+        if (map.tiles[y][x] === 1) fill = 0x22aa22; // player
+        if (map.tiles[y][x] === 2) fill = 0xaa2222; // AI
+
         const rect = this.add.rectangle(
           x * TILE_SIZE + TILE_SIZE/2,
           y * TILE_SIZE + TILE_SIZE/2,
           TILE_SIZE - 2, TILE_SIZE - 2,
-          0x444444
+          fill
         ).setStrokeStyle(1, 0x888888);
 
-        // assign color based on ownerFlag
-        if (ownerFlag === 1)      rect.fillColor = 0x22aa22; // player
-        else if (ownerFlag === 2) rect.fillColor = 0xaa2222; // enemy
-        else                      rect.fillColor = 0x444444; // neutral
-
-        this.grid[y][x] = { owner: ownerFlag, rect };
+        this.grid[y][x] = { owner: map.tiles[y][x], rect };
       }
     }
 
-    // still let player toggle tiles if you like
+    // clicking still toggles player-control on neutral only
     this.input.on('pointerdown', ptr => {
       const gx = Math.floor(ptr.x / TILE_SIZE);
       const gy = Math.floor(ptr.y / TILE_SIZE);
-      if (gx >= 0 && gx < COLS && gy >= 0 && gy < ROWS) {
-        const cell = this.grid[gy][gx];
-        // flip between neutral(0) and player(1)
-        cell.owner = cell.owner === 1 ? 0 : 1;
-        cell.rect.fillColor = cell.owner === 1 ? 0x22aa22 : 0x444444;
+      if (gx >= 0 && gx < cols && gy >= 0 && gy < rows) {
+        let cell = this.grid[gy][gx];
+        if (cell.owner === 0) {
+          cell.owner = 1;
+          cell.rect.fillColor = 0x22aa22;
+        }
       }
     });
   }
