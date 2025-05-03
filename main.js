@@ -1,3 +1,5 @@
+console.log("Starting GenericRTSGame…");
+
 // Phaser game configuration
 const TILE_SIZE = 64;
 const ROWS = 8, COLS = 12;
@@ -10,7 +12,6 @@ const config = {
   scene: [ BootScene, GameScene ]
 };
 
-// Boot scene: load assets (none yet) and start GameScene
 class BootScene extends Phaser.Scene {
   constructor() { super('BootScene'); }
   preload() {
@@ -21,7 +22,6 @@ class BootScene extends Phaser.Scene {
   }
 }
 
-// Main game scene
 class GameScene extends Phaser.Scene {
   constructor() {
     super('GameScene');
@@ -29,7 +29,6 @@ class GameScene extends Phaser.Scene {
   }
 
   create() {
-    // Build territory grid
     for (let y = 0; y < ROWS; y++) {
       this.grid[y] = [];
       for (let x = 0; x < COLS; x++) {
@@ -40,17 +39,15 @@ class GameScene extends Phaser.Scene {
           0x444444
         ).setStrokeStyle(1, 0x888888);
 
-        // store cell state
         this.grid[y][x] = { owner: null, rect };
       }
     }
 
-    // Click to claim/unclaim
     this.input.on('pointerdown', ptr => {
       const gx = Math.floor(ptr.x / TILE_SIZE);
       const gy = Math.floor(ptr.y / TILE_SIZE);
-      if (gy >= 0 && gy < ROWS && gx >= 0 && gx < COLS) {
-        let cell = this.grid[gy][gx];
+      if (gy>=0 && gy<ROWS && gx>=0 && gx<COLS) {
+        const cell = this.grid[gy][gx];
         if (cell.owner === 'player') {
           cell.owner = null;
           cell.rect.fillColor = 0x444444;
@@ -63,5 +60,4 @@ class GameScene extends Phaser.Scene {
   }
 }
 
-// launch!
 new Phaser.Game(config);
