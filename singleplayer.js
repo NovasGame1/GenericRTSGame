@@ -1,75 +1,74 @@
-// singleplayer.js
-console.log("singleplayer.js loaded");
+console.log("singleplayer.js loaded — GenericRTSGame");
 
+// match your map JSON & PNG layout
 const TILE_SIZE = 64;
+const MAP_KEY   = 'default-map';  // change this to load a different map
 
-class SingleplayerScene extends Phaser.Scene {
+const config = {
+  type: Phaser.AUTO,
+  parent: 'sp-container',
+  width: TILE_SIZE * 12,
+  height: TILE_SIZE * 8,
+  backgroundColor: '#222',
+  scene: [ SPScene ]
+};
+
+class SPScene extends Phaser.Scene {
   constructor() {
-    super('SingleplayerScene');
+    super('SPScene');
+    this.grid = [];
   }
 
   preload() {
-    // load the map JSON
-    this.load.json('mapData', 'assets/maps/default-map.json');
+    // 1) load the map data
+    this.load.json('mapData', `assets/maps/${MAP_KEY}.json`);
+    // 2) load the static map image
+    this.load.image('mapImg', `assets/maps/${MAP_KEY}.png`);
   }
 
   create() {
+    // pull in your JSON
     const map = this.cache.json.get('mapData');
     const rows = map.rows, cols = map.cols;
-    this.grid = [];
 
-    // center the game on-screen if desired
-    // this.cameras.main.setScroll(...);
+    // draw the background map image
+    this.add.image(0, 0, 'mapImg')
+      .setOrigin(0)
+      .setDisplaySize(cols * TILE_SIZE, rows * TILE_SIZE);
 
-    // draw each tile
+    // overlay clickable tiles
     for (let y = 0; y < rows; y++) {
       this.grid[y] = [];
       for (let x = 0; x < cols; x++) {
-        // choose a color per owner code
-        let fill = 0x444444;        // neutral
-        if (map.tiles[y][x] === 1) fill = 0x22aa22; // player start
-        if (map.tiles[y][x] === 2) fill = 0xaa2222; // AI start
+        // start color based on JSON owner code
+        const owner = map.tiles[y][x];
+        const baseColor = owner === 1 ? 0x22aa22
+                         : owner === 2 ? 0xaa2222
+                         :               0x444444;
 
         const rect = this.add.rectangle(
           x * TILE_SIZE + TILE_SIZE/2,
           y * TILE_SIZE + TILE_SIZE/2,
           TILE_SIZE - 2,
           TILE_SIZE - 2,
-          fill
+          baseColor,
+          0.3                           // semi-transparent overlay
         ).setStrokeStyle(1, 0x888888);
 
-        this.grid[y][x] = {
-          owner: map.tiles[y][x],
-          rect
-        };
+        // store state
+        this.grid[y][x] = { owner, rect };
+
+        // make it interactive
+        rect.setInteractive();
+        rect.on('pointerdown', () => {
+          // toggle between neutral (0) and player (1)
+          const cell = this.grid[y][x];
+          cell.owner = cell.owner === 1 ? 0 : 1;
+          rect.fillColor = cell.owner === 1 ? 0x22aa22 : 0x444444;
+        });
       }
     }
-
-    // clicking to claim neutral tiles
-    this.input.on('pointerdown', ptr => {
-      const gx = Math.floor(ptr.x / TILE_SIZE);
-      const gy = Math.floor(ptr.y / TILE_SIZE);
-      if (
-        gx >= 0 && gx < cols &&
-        gy >= 0 && gy < rows
-      ) {
-        const cell = this.grid[gy][gx];
-        if (cell.owner === 0) {
-          cell.owner = 1;
-          cell.rect.fillColor = 0x22aa22;
-        }
-      }
-    });
   }
 }
 
-window.addEventListener('load', () => {
-  new Phaser.Game({
-    type: Phaser.AUTO,
-    parent: 'game-container',
-    width: TILE_SIZE * 12,
-    height: TILE_SIZE * 8,
-    backgroundColor: '#222',
-    scene: [ SingleplayerScene ]
-  });
-});
+new Phaser.Game(config);
