@@ -23,9 +23,7 @@
       background: #444;
       color: #fff;
     }
-    #menu button:hover {
-      background: #555;
-    }
+    #menu button:hover { background: #555; }
     #game-container {
       width: 100vw;
       height: 100vh;
@@ -35,15 +33,28 @@
 </head>
 <body>
 
-  <!-- Simple overlay menu -->
   <div id="menu">
     <button id="singleplayer-btn">Singleplayer</button>
     <button id="multiplayer-btn">Multiplayer</button>
     <button id="settings-btn">Settings</button>
   </div>
 
-  <!-- Phaser will inject its canvas here -->
   <div id="game-container"></div>
+
+  <!-- attach menu handlers immediately -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('singleplayer-btn').addEventListener('click', () => {
+        window.location.href = 'singleplayer.html';
+      });
+      document.getElementById('multiplayer-btn').addEventListener('click', () => {
+        alert('Multiplayer coming soon!');
+      });
+      document.getElementById('settings-btn').addEventListener('click', () => {
+        alert('Settings coming soon!');
+      });
+    });
+  </script>
 
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
   <script src="main.js"></script>
