@@ -1,21 +1,23 @@
-# **index.html**
-```html
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8" />
   <title>GenericRTSGame</title>
-  <!-- Phaser 3 must load before main.js -->
-  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
   <style>
-    body { margin:0; }
-    canvas { display:block; margin:0 auto; }
+    body { margin:0; background:#222; }
+    #game-container { 
+      width: 768px;   /* COLS * TILE_SIZE = 12 * 64 */
+      height: 512px;  /* ROWS * TILE_SIZE = 8 * 64 */
+      margin: auto; 
+    }
   </style>
 </head>
 <body>
-  <!-- Phaser will inject the canvas here -->
+  <!-- this is where our game canvas will go -->
+  <div id="game-container"></div>
 
-  <!-- Load your game script after the DOM is ready -->
+  <!-- move scripts into body so container is parsed first -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
   <script src="main.js"></script>
 </body>
 </html>
